@@ -7,8 +7,17 @@
       <MeetingsPage :username="authenticatedUsername"></MeetingsPage>
     </div>
 
+
+
     <div v-else>
-      <LoginForm @login="(user) => logMeIn(user)"></LoginForm>
+      <button :class="signingUp ? 'button-outline' : ''" @click="signingUp = false">Logowanie</button>
+      <button :class="!signingUp ? 'button-outline' : ''" @click="signingUp = true">Rejestracja</button>
+
+
+      <div v-if="message" :class="accountCreated ? 'alert' : 'alert-red'"> {{message}}</div>
+
+      <LoginForm v-if="!signingUp" @login="(user) => logMeIn(user)"></LoginForm>
+      <LoginForm v-else @login="(user) => register(user)" button-label="załóż konto"></LoginForm>
     </div>
   </div>
 </template>
@@ -18,20 +27,45 @@ import "milligram";
 import LoginForm from "./LoginForm";
 import UserPanel from "./UserPanel";
 import MeetingsPage from "./meetings/MeetingsPage";
+import axios from 'axios';
 
 export default {
   components: {LoginForm, MeetingsPage, UserPanel},
   data() {
     return {
+      message: '',
+      accountCreated: false,
+      signingUp: false,
       authenticatedUsername: '',
     }
   },
   methods: {
     logMeIn(user) {
-      this.authenticatedUsername = user.login;
+      axios.post('/api/tokens', user)
+          .then(response => {
+            this.authenticatedUsername = user.login;
+            const token = response.data.token;
+            axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+            axios.get('meetings').then(response => console.log(response.data));
+          })
+          .catch(response => {
+            this.message = "Nie udało sie zalogować"
+          });
     },
     logMeOut() {
       this.authenticatedUsername = '';
+      delete axios.defaults.headers.common.Authorization;
+    },
+    register(user) {
+      axios.post('/api/participants', user)
+          .then(response => {
+            this.message = "Udało się założyć konto"
+            this.accountCreated = true
+          })
+          .catch(response => {
+            this.message = "Nie udało się założyć konta"
+            this.accountCreated = false
+          });
     }
   }
 }
@@ -41,5 +75,23 @@ export default {
 #app {
   max-width: 1000px;
   margin: 0 auto;
+}
+
+.alert {
+  padding: 5px;
+  border: 2px solid green;
+  background: lightgreen;
+  font-size: 2em;
+  color: darkgreen;
+  text-align: center;
+}
+
+.alert-red {
+  padding: 5px;
+  font-size: 2em;
+  color: darkred;
+  border: 2px solid red;
+  background: lightcoral;
+  text-align: center;
 }
 </style>
