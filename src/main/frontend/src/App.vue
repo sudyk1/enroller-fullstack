@@ -51,9 +51,7 @@ export default {
     logMeIn(user) {
       axios.post('/api/tokens', user)
           .then(response => {
-            this.authenticatedUsername = user.login;
             const token = response.data.token;
-            axios.get('meetings').then(response => this.meetings = response.data);
             this.authentication(user.login, token);
           })
           .catch(response => {
@@ -63,6 +61,7 @@ export default {
     logMeOut() {
       this.authenticatedUsername = '';
       delete axios.defaults.headers.common.Authorization;
+      localStorage.clear();
     },
     register(user) {
       axios.post('/api/participants', user)

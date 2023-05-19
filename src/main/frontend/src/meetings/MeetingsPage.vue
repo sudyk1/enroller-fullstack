@@ -9,7 +9,6 @@
                   @attend="addMeetingParticipant($event)"
                   @unattend="removeMeetingParticipant($event)"
                   @delete="deleteMeeting($event)"></MeetingsList>
-    <div v-if="message" :class="meetingCreated ? 'alert' : 'alert-red'"> {{message}}</div>
   </div>
 </template>
 
@@ -28,7 +27,20 @@ export default {
       meetingCreated: false,
     };
   },
+  created() {
+      this.loadMeetings();
+  },
   methods: {
+      loadMeetings() {
+          axios
+              .get("/api/meetings")
+              .then(response => {
+                  this.meetings = response.data;
+              })
+              .catch(error => {
+                  console.log("Nie udało się załadować spotkań.");
+              });
+      },
       addNewMeeting(meeting) {
           axios.post('/api/meetings', meeting)
               .then(response => {
