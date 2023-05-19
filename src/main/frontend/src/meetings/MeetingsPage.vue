@@ -33,7 +33,7 @@ export default {
   methods: {
       loadMeetings() {
           axios
-              .get("/api/meetings")
+              .get("/api/meetings", { params: { username: this.username } })
               .then(response => {
                   this.meetings = response.data;
               })
