@@ -2,40 +2,85 @@
   <div>
     <NewMeetingForm @added="addNewMeeting($event)"></NewMeetingForm>
     <span v-if="meetings.length == 0">Brak zaplanowanych spotkań.</span>
+
     <h3 v-else>Zaplanowane zajęcia ({{ meetings.length }})</h3>
     <MeetingsList :meetings="meetings"
                   :username="username"
                   @attend="addMeetingParticipant($event)"
                   @unattend="removeMeetingParticipant($event)"
                   @delete="deleteMeeting($event)"></MeetingsList>
+    <div v-if="message" :class="meetingCreated ? 'alert' : 'alert-red'"> {{message}}</div>
   </div>
 </template>
 
 <script>
 import NewMeetingForm from "./NewMeetingForm";
 import MeetingsList from "./MeetingsList";
+import axios from "axios";
 
 export default {
   components: {NewMeetingForm, MeetingsList},
   props: {username: String},
   data() {
     return {
-      meetings: []
+      meetings: [],
+      message: '',
+      meetingCreated: false,
     };
   },
   methods: {
-    addNewMeeting(meeting) {
-      this.meetings.push(meeting);
-    },
-    addMeetingParticipant(meeting) {
-      meeting.participants.push(this.username);
-    },
+      addNewMeeting(meeting) {
+          axios.post('/api/meetings', meeting)
+              .then(response => {
+                  console.log('Dodano spotaknie.');
+                  this.meetings.push(meeting);
+              })
+              .catch(response => console.log('Nie udało się dodać spotkania'))
+      },
+      addMeetingParticipant(meeting) {
+          this.meetings.at(this.meetings.indexOf(meeting)).participants.push(this.username);
+          axios.post('/api/meetings/' + meeting.id + '/participants', {login:this.username} )
+              .then(response => {
+                  console.log('Dodano uczestnika.');
+              })
+              .catch(response => console.log('Nie udało się dodać uczestnika'))
+      },
     removeMeetingParticipant(meeting) {
-      meeting.participants.splice(meeting.participants.indexOf(this.username), 1);
+        this.meetings.at(this.meetings.indexOf(meeting)).participants.push(this.username);
+        axios.post('/api/meetings/' + meeting.id + '/participants', {login:this.username} )
+            .then(response => {
+                console.log('Dodano uczestnika do spotkania.');
+            })
+            .catch(response => console.log('Nie udało się dodać uczestnika do spoktania'))
     },
     deleteMeeting(meeting) {
-      this.meetings.splice(this.meetings.indexOf(meeting), 1);
+        axios.delete('/api/meetings/' + meeting.id)
+            .then(response => {
+                console.log('Usunięto spotkanie.');
+            })
+            .catch(response => console.log('Nie udało się usunąć spotkania'))
+        this.meetings.splice(this.meetings.indexOf(meeting), 1);
     },
   }
 }
 </script>
+
+<style>
+.alert {
+    padding: 5px;
+    border: 2px solid green;
+    background: lightgreen;
+    font-size: 2em;
+    color: darkgreen;
+    text-align: center;
+}
+
+.alert-red {
+    padding: 5px;
+    font-size: 2em;
+    color: darkred;
+    border: 2px solid red;
+    background: lightcoral;
+    text-align: center;
+}
+</style>

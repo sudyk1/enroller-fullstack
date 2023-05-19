@@ -39,14 +39,22 @@ export default {
       authenticatedUsername: '',
     }
   },
+  mounted() {
+        const username = localStorage.getItem('username');
+        const token = localStorage.getItem('token');
+        if (username && token) {
+            this.authentication(username, token);
+            axios.get(`/api/meetings`).catch(() => this.logMeOut());
+        }
+    },
   methods: {
     logMeIn(user) {
       axios.post('/api/tokens', user)
           .then(response => {
             this.authenticatedUsername = user.login;
             const token = response.data.token;
-            axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
-            axios.get('meetings').then(response => console.log(response.data));
+            axios.get('meetings').then(response => this.meetings = response.data);
+            this.authentication(user.login, token);
           })
           .catch(response => {
             this.message = "Nie udało sie zalogować"
@@ -66,7 +74,13 @@ export default {
             this.message = "Nie udało się założyć konta"
             this.accountCreated = false
           });
-    }
+    },
+    authentication(username, token) {
+          this.authenticatedUsername = username;
+          axios.defaults.headers.common['Authorization'] = 'Bearer ' + token;
+          localStorage.setItem('username', username);
+          localStorage.setItem('token', token);
+      },
   }
 }
 </script>
